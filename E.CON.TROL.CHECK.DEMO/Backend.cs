@@ -1,5 +1,8 @@
 ﻿using NetMQ;
 using NetMQ.Sockets;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,6 +21,10 @@ namespace E.CON.TROL.CHECK.DEMO
         public bool IsRunning { get; private set; }
 
         public List<string> ImageFiles { get; } = new List<string>();
+
+        public string BoxId { get; private set; }
+
+        public string BoxType { get; private set; }
 
         public Backend()
         {
@@ -89,7 +96,7 @@ namespace E.CON.TROL.CHECK.DEMO
                 using (var subSocket = new SubscriberSocket())
                 {
                     subSocket.Options.ReceiveHighWatermark = 1000;
-                    subSocket.Connect("tcp://localhost:55560");
+                    subSocket.Connect("tcp://localhost:55565");
                     subSocket.SubscribeToAnyTopic();
                     subSocket.ReceiveReady += OnImageReceived;
 
@@ -109,6 +116,19 @@ namespace E.CON.TROL.CHECK.DEMO
             }
         }
 
+        private static string GetPropertyValueFromJObject(JObject json, string propertyName)
+        {
+            JToken token = null;
+            if(json?.TryGetValue(propertyName, out token) == true)
+            {
+                return token?.ToString();
+            }
+            else
+            {
+                return null;
+            }
+        }
+
         private void OnCoreMessage(object sender, NetMQ.NetMQSocketEventArgs e)
         {
             bool more = false;
@@ -116,6 +136,35 @@ namespace E.CON.TROL.CHECK.DEMO
             if (!more)
             {
                 int infoLength = BitConverter.ToInt32(buffer, 0);
+
+                using (MemoryStream ms = new MemoryStream(buffer,4, infoLength))
+                {
+                    using (BsonDataReader reader = new BsonDataReader(ms))
+                    {
+                        JsonSerializer serializer = new JsonSerializer();
+
+                        var jObject = serializer.Deserialize(reader) as JObject;
+
+                        var messageType = GetPropertyValueFromJObject(jObject, "MessageType");
+                        if(messageType.StartsWith("NetMq.Messages.StateMessage"))
+                        {
+
+                        }
+                        else if (messageType.StartsWith("NetMq.Messages.AcquisitionStartMessage"))
+                        {
+
+                        }
+                        else if (messageType.StartsWith("NetMq.Messages.ProcessStartMessage"))
+                        {
+                            BoxId = GetPropertyValueFromJObject(jObject, "ID");
+                            BoxType = GetPropertyValueFromJObject(jObject, "BoxType");
+                        }
+                        else
+                        {
+
+                        }
+                    }
+                }
             }
         }
 

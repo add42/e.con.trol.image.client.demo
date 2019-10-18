@@ -36,6 +36,8 @@ namespace E.CON.TROL.CHECK.DEMO
                     this.pictureBox1.Image = bmp;
                 }
             }
+
+            label1.Text = $"BoxID: {Backend?.BoxId} - BoxType: {Backend?.BoxType}";
         }
     }
 }

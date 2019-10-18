@@ -14,9 +14,12 @@ namespace E.CON.TROL.CHECK.DEMO
         [STAThread]
         static void Main()
         {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            using (var backend = new Backend())
+            {
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                Application.Run(new Frontend(backend));
+            }
         }
     }
 }

@@ -26,12 +26,14 @@ namespace E.CON.TROL.CHECK.DEMO
 
         public string BoxType { get; private set; }
 
+        public Exception LastException { get; private set; }
+
         public Backend()
         {
             CommunicationThread1 = new Thread(RunImageCommunication) { IsBackground = true };
             CommunicationThread1.Start();
 
-            CommunicationThread2 = new Thread(RunBoxCommunication) { IsBackground = true };
+            CommunicationThread2 = new Thread(RunControlCommunication) { IsBackground = true };
             CommunicationThread2.Start();
         }
 
@@ -60,17 +62,17 @@ namespace E.CON.TROL.CHECK.DEMO
             CommunicationThread2?.Join(5000);
         }
 
-        private void RunBoxCommunication()
+        private void RunControlCommunication()
         {
             try
             {
                 IsRunning = true;
                 using (var subSocket = new SubscriberSocket())
                 {
-                    subSocket.Options.ReceiveHighWatermark = 1000;
+                    subSocket.Options.ReceiveHighWatermark = 50;
                     subSocket.Connect("tcp://localhost:55555");
                     subSocket.SubscribeToAnyTopic();
-                    subSocket.ReceiveReady += OnCoreMessage;
+                    subSocket.ReceiveReady += OnReceiveControlMessage;
 
                     while (!IsDisposed)
                     {
@@ -80,7 +82,7 @@ namespace E.CON.TROL.CHECK.DEMO
             }
             catch (Exception exp)
             {
-
+                LastException = exp;
             }
             finally
             {
@@ -95,10 +97,10 @@ namespace E.CON.TROL.CHECK.DEMO
                 IsRunning = true;
                 using (var subSocket = new SubscriberSocket())
                 {
-                    subSocket.Options.ReceiveHighWatermark = 1000;
+                    subSocket.Options.ReceiveHighWatermark = 10;
                     subSocket.Connect("tcp://localhost:55565");
                     subSocket.SubscribeToAnyTopic();
-                    subSocket.ReceiveReady += OnImageReceived;
+                    subSocket.ReceiveReady += OnReceiveImageMessage;
 
                     while (!IsDisposed)
                     {
@@ -108,7 +110,7 @@ namespace E.CON.TROL.CHECK.DEMO
             }
             catch (Exception exp)
             {
-
+                LastException = exp;
             }
             finally
             {
@@ -116,20 +118,9 @@ namespace E.CON.TROL.CHECK.DEMO
             }
         }
 
-        private static string GetPropertyValueFromJObject(JObject json, string propertyName)
-        {
-            JToken token = null;
-            if(json?.TryGetValue(propertyName, out token) == true)
-            {
-                return token?.ToString();
-            }
-            else
-            {
-                return null;
-            }
-        }
 
-        private void OnCoreMessage(object sender, NetMQ.NetMQSocketEventArgs e)
+
+        private void OnReceiveControlMessage(object sender, NetMQ.NetMQSocketEventArgs e)
         {
             bool more = false;
             var buffer = e.Socket.ReceiveFrameBytes(out more);
@@ -137,7 +128,7 @@ namespace E.CON.TROL.CHECK.DEMO
             {
                 int infoLength = BitConverter.ToInt32(buffer, 0);
 
-                using (MemoryStream ms = new MemoryStream(buffer,4, infoLength))
+                using (MemoryStream ms = new MemoryStream(buffer, 4, infoLength))
                 {
                     using (BsonDataReader reader = new BsonDataReader(ms))
                     {
@@ -145,8 +136,8 @@ namespace E.CON.TROL.CHECK.DEMO
 
                         var jObject = serializer.Deserialize(reader) as JObject;
 
-                        var messageType = GetPropertyValueFromJObject(jObject, "MessageType");
-                        if(messageType.StartsWith("NetMq.Messages.StateMessage"))
+                        var messageType = jObject?.GetPropertyValueFromJObject("MessageType");
+                        if (messageType.StartsWith("NetMq.Messages.StateMessage"))
                         {
 
                         }
@@ -156,8 +147,8 @@ namespace E.CON.TROL.CHECK.DEMO
                         }
                         else if (messageType.StartsWith("NetMq.Messages.ProcessStartMessage"))
                         {
-                            BoxId = GetPropertyValueFromJObject(jObject, "ID");
-                            BoxType = GetPropertyValueFromJObject(jObject, "BoxType");
+                            BoxId = jObject?.GetPropertyValueFromJObject("ID");
+                            BoxType = jObject?.GetPropertyValueFromJObject("BoxType");
                         }
                         else
                         {
@@ -168,7 +159,7 @@ namespace E.CON.TROL.CHECK.DEMO
             }
         }
 
-        private void OnImageReceived(object sender, NetMQ.NetMQSocketEventArgs e)
+        private void OnReceiveImageMessage(object sender, NetMQ.NetMQSocketEventArgs e)
         {
             bool more = false;
             var buffer = e.Socket.ReceiveFrameBytes(out more);

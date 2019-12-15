@@ -22,11 +22,15 @@ namespace E.CON.TROL.CHECK.DEMO
 
         public List<string> ImageFiles { get; } = new List<string>();
 
-        public string BoxId { get; private set; }
-
-        public string BoxType { get; private set; }
-
         public Exception LastException { get; private set; }
+
+        public int CounterStateMessage { get; private set; } = 0;
+
+        public int CounterAcquisitionStartMessage { get; private set; } = 0;
+
+        public int CounterProcessStartMessage { get; private set; } = 0;
+
+        public event EventHandler<string> LogEventOccured;
 
         public Backend()
         {
@@ -60,6 +64,14 @@ namespace E.CON.TROL.CHECK.DEMO
             CommunicationThread1?.Join(5000);
 
             CommunicationThread2?.Join(5000);
+        }
+
+        private void Log(string message)
+        {
+            if (!string.IsNullOrEmpty(message))
+            {
+                LogEventOccured?.Invoke(this, $"{DateTime.Now.ToString("HH-mm-ss,fff")} - {message}");
+            }
         }
 
         private void RunControlCommunication()
@@ -118,8 +130,6 @@ namespace E.CON.TROL.CHECK.DEMO
             }
         }
 
-
-
         private void OnReceiveControlMessage(object sender, NetMQ.NetMQSocketEventArgs e)
         {
             bool more = false;
@@ -139,16 +149,24 @@ namespace E.CON.TROL.CHECK.DEMO
                         var messageType = jObject?.GetPropertyValueFromJObject("MessageType");
                         if (messageType.StartsWith("NetMq.Messages.StateMessage"))
                         {
+                            CounterStateMessage++;
 
+                            Log($"Received StateMessage -> CounterStateMessage: {CounterStateMessage}");
                         }
                         else if (messageType.StartsWith("NetMq.Messages.AcquisitionStartMessage"))
                         {
+                            CounterAcquisitionStartMessage++;
 
+                            Log($"Received StateMessage -> CounterAcquisitionStartMessage: {CounterAcquisitionStartMessage}");
                         }
                         else if (messageType.StartsWith("NetMq.Messages.ProcessStartMessage"))
                         {
-                            BoxId = jObject?.GetPropertyValueFromJObject("ID");
-                            BoxType = jObject?.GetPropertyValueFromJObject("BoxType");
+                            CounterProcessStartMessage++;
+
+                            var boxTrackingId = jObject?.GetPropertyValueFromJObject("ID");
+                            var boxType = jObject?.GetPropertyValueFromJObject("BoxType");
+
+                            Log($"Received ProcessStartMessage -> CounterProcessStartMessage: {CounterProcessStartMessage} - BoxTrackingId: {boxTrackingId} - BoxType: {boxType}");
                         }
                         else
                         {
@@ -165,8 +183,26 @@ namespace E.CON.TROL.CHECK.DEMO
             var buffer = e.Socket.ReceiveFrameBytes(out more);
             if (!more)
             {
-                var path = Path.Combine(Path.GetTempPath(), $"{DateTime.Now.Ticks}.bmp");
                 int infoLength = BitConverter.ToInt32(buffer, 0);
+                using (MemoryStream ms = new MemoryStream(buffer, 4, infoLength))
+                {
+                    using (BsonDataReader reader = new BsonDataReader(ms))
+                    {
+                        JsonSerializer serializer = new JsonSerializer();
+
+                        var jObject = serializer.Deserialize(reader) as JObject;
+
+                        
+                        var machineName = jObject?.GetPropertyValueFromJObject("MachineName");
+                        var camera = jObject?.GetPropertyValueFromJObject("Camera");
+                        var boxTrackingId = jObject?.GetPropertyValueFromJObject("BoxTrackingId");
+                        var boxType = jObject?.GetPropertyValueFromJObject("BoxType");
+
+                        Log($"Received image -> BoxTrackingId: {boxTrackingId} - BoxType: {boxType} - Camera(Number): {camera} - MachineName: {machineName}");
+                    }
+                }
+
+                var path = Path.Combine(Path.GetTempPath(), $"{DateTime.Now.Ticks}.bmp");
                 int fileLength = buffer.Length - infoLength - 4;
 
                 using (var file = File.OpenWrite(path))

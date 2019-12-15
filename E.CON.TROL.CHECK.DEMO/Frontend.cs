@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace E.CON.TROL.CHECK.DEMO
@@ -22,6 +17,27 @@ namespace E.CON.TROL.CHECK.DEMO
             Backend = backend;
 
             InitializeComponent();
+
+            Backend.LogEventOccured += Backend_LogEventOccured;
+        }
+
+        private void Backend_LogEventOccured(object sender, string e)
+        {
+            if (InvokeRequired)
+            {
+                this.Invoke(new EventHandler<string>(this.Backend_LogEventOccured), sender, e);
+            }
+            else
+            {
+                while (listBox1.Items.Count > 100)
+                {
+                    listBox1.Items.RemoveAt(0);
+                }
+
+                listBox1.Items.Add(e);
+                int visibleItems = listBox1.ClientSize.Height / listBox1.ItemHeight;
+                listBox1.TopIndex = Math.Max(listBox1.Items.Count - visibleItems + 1, 0);
+            }
         }
 
         private void TimerUpdate_Tick(object sender, EventArgs e)
@@ -36,8 +52,6 @@ namespace E.CON.TROL.CHECK.DEMO
                     this.pictureBox1.Image = bmp;
                 }
             }
-
-            label1.Text = $"BoxID: {Backend?.BoxId} - BoxType: {Backend?.BoxType}";
         }
     }
 }

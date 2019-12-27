@@ -32,6 +32,7 @@
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.timerUpdate = new System.Windows.Forms.Timer(this.components);
             this.listBox1 = new System.Windows.Forms.ListBox();
+            this.buttonOpenConfigEditor = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -57,18 +58,28 @@
             this.listBox1.FormattingEnabled = true;
             this.listBox1.Location = new System.Drawing.Point(12, 467);
             this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(776, 108);
+            this.listBox1.Size = new System.Drawing.Size(675, 108);
             this.listBox1.TabIndex = 1;
+            // 
+            // button1
+            // 
+            this.buttonOpenConfigEditor.Location = new System.Drawing.Point(713, 484);
+            this.buttonOpenConfigEditor.Name = "button1";
+            this.buttonOpenConfigEditor.Size = new System.Drawing.Size(75, 23);
+            this.buttonOpenConfigEditor.TabIndex = 2;
+            this.buttonOpenConfigEditor.Text = "OpenConfig";
+            this.buttonOpenConfigEditor.UseVisualStyleBackColor = true;
+            this.buttonOpenConfigEditor.Click += new System.EventHandler(this.buttonOpenConfigEditor_Click);
             // 
             // Frontend
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 586);
+            this.Controls.Add(this.buttonOpenConfigEditor);
             this.Controls.Add(this.listBox1);
             this.Controls.Add(this.pictureBox1);
             this.Name = "Frontend";
-            this.Text = "E.CON.TROL.CHECK.DEMO";
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);
 
@@ -79,6 +90,7 @@
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.Timer timerUpdate;
         private System.Windows.Forms.ListBox listBox1;
+        private System.Windows.Forms.Button buttonOpenConfigEditor;
     }
 }
 

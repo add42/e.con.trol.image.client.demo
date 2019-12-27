@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Drawing;
-using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -10,7 +8,7 @@ namespace E.CON.TROL.CHECK.DEMO
     {
         Backend Backend { get; }
 
-        string CurrentImageFile { get; set; }
+        object CurrentImage { get; set; }
 
         internal Frontend(Backend backend)
         {
@@ -19,6 +17,8 @@ namespace E.CON.TROL.CHECK.DEMO
             InitializeComponent();
 
             Backend.LogEventOccured += Backend_LogEventOccured;
+
+            this.Text = Backend?.Config?.Name;
         }
 
         private void Backend_LogEventOccured(object sender, string e)
@@ -29,29 +29,35 @@ namespace E.CON.TROL.CHECK.DEMO
             }
             else
             {
-                while (listBox1.Items.Count > 100)
-                {
-                    listBox1.Items.RemoveAt(0);
-                }
-
                 listBox1.Items.Add(e);
-                int visibleItems = listBox1.ClientSize.Height / listBox1.ItemHeight;
-                listBox1.TopIndex = Math.Max(listBox1.Items.Count - visibleItems + 1, 0);
+
+                if (Control.MouseButtons != MouseButtons.Left)
+                {
+                    while (listBox1.Items.Count > 100)
+                    {
+                        listBox1.Items.RemoveAt(0);
+                    }
+
+                    int visibleItems = listBox1.ClientSize.Height / listBox1.ItemHeight;
+                    listBox1.TopIndex = Math.Max(listBox1.Items.Count - visibleItems + 1, 0);
+                }
             }
         }
 
         private void TimerUpdate_Tick(object sender, EventArgs e)
         {
-            var currenFile = Backend.ImageFiles.LastOrDefault();
-            if (currenFile != CurrentImageFile)
+            var lastImage = Backend.QueueImages.LastOrDefault();
+            if(lastImage != CurrentImage)
             {
-                CurrentImageFile = currenFile;
-                if (File.Exists(CurrentImageFile))
-                {
-                    var bmp = new Bitmap(CurrentImageFile);
-                    this.pictureBox1.Image = bmp;
-                }
+                CurrentImage = lastImage;
+                var bmp = lastImage?.GetBitmap();
+                this.pictureBox1.Image = bmp;
             }
+        }
+
+        private void buttonOpenConfigEditor_Click(object sender, EventArgs e)
+        {
+            Backend?.Config?.OpenEditor();
         }
     }
 }

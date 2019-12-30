@@ -16,9 +16,21 @@ namespace E.CON.TROL.CHECK.DEMO
 
             InitializeComponent();
 
-            Backend.LogEventOccured += Backend_LogEventOccured;
+            LogHelper.LogEventOccured += Backend_LogEventOccured;
 
             this.Text = Backend?.Config?.Name;
+
+            checkBox1.Checked = Backend.Config.ReturnBoxResultIo;
+            checkBox1.CheckedChanged += OnCheckBoxBoxResult_CheckedChanged;
+        }
+
+        private void OnCheckBoxBoxResult_CheckedChanged(object sender, EventArgs e)
+        {
+            if(Backend?.Config != null)
+            {
+                Backend.Config.ReturnBoxResultIo = checkBox1.Checked;
+                Backend.Config.SaveConfig();
+            }
         }
 
         private void Backend_LogEventOccured(object sender, string e)
@@ -52,12 +64,15 @@ namespace E.CON.TROL.CHECK.DEMO
                 CurrentImage = lastImage;
                 var bmp = lastImage?.GetBitmap();
                 this.pictureBox1.Image = bmp;
+                label1.Text = lastImage.BoxTrackingId.ToString();
             }
         }
 
-        private void buttonOpenConfigEditor_Click(object sender, EventArgs e)
+        private async void buttonOpenConfigEditor_Click(object sender, EventArgs e)
         {
-            Backend?.Config?.OpenEditor();
+            buttonOpenConfigEditor.Enabled = false;
+            await Backend?.Config?.OpenEditor();
+            buttonOpenConfigEditor.Enabled = true;
         }
     }
 }

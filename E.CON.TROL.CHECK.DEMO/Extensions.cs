@@ -7,19 +7,6 @@ namespace E.CON.TROL.CHECK.DEMO
 {
     static class Extensions
     {
-        public static string GetPropertyValueFromJObject(this JObject json, string propertyName)
-        {
-            JToken token = null;
-            if (json?.TryGetValue(propertyName, out token) == true)
-            {
-                return token?.ToString();
-            }
-            else
-            {
-                return null;
-            }
-        }
-
         public static string GetLocalStorageDirectory(this object obj)
         {
             object[] arr = obj.GetType().Assembly.GetCustomAttributes(typeof(System.Runtime.InteropServices.GuidAttribute), false);

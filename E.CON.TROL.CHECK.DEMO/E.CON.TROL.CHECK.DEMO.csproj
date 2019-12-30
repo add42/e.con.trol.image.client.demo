@@ -75,6 +75,7 @@
     <Compile Include="Frontend.Designer.cs">
       <DependentUpon>Frontend.cs</DependentUpon>
     </Compile>
+    <Compile Include="Log.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Frontend.resx">
